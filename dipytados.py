@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ########################################################################
 ##
 ## Sesiones de diputados
@@ -7,7 +8,6 @@
 import urllib2
 from bs4 import BeautifulSoup
 import re
-
 
 class sesion():
 	"""
@@ -33,7 +33,8 @@ class sesion():
 		
 		self.html_version_taquigrafica = None
 		self.dialogo = None
-		self.intervenciones = {}
+		self.intervenciones = []
+		self.intervenciones_por_diputado = {}
 		
 	def getVersionTaquigrafica(self, file = None):
 		"""
@@ -93,7 +94,12 @@ class sesion():
 		return lista_diputados
 	
 	def getIntervencionesDiputados (self):
-		""" Devuelve cada una de las intervenciones por separado dado un texto de la sesion """
+		""" 
+		Devuelve un diccionario donde la clave son los diputados y dentro 
+		de cada una esta el texto concatenado de todas las entradas
+		
+		Rellena la variable	intervenciones_por_diputado	
+		"""
 		prog_indices = re.compile('(sr.|sra.).*', re.IGNORECASE)
 		prog_nombre = re.compile('(sr.|sra.).*,*(\.-)', re.IGNORECASE)
 
@@ -103,26 +109,38 @@ class sesion():
 		for i in result:
 			indices.append(i.span()[0])
 		
+		dips = []
 		for indice in range(len(indices)-1):
 			
 			inicio, final = prog_nombre.match(self.dialogo[indices[indice]:indices[indice+1]]).span()
 			
 			discurso = self.dialogo[indices[indice]:indices[indice+1]]
+			
 			nombre = discurso[inicio:final]
-			self.intervenciones[nombre] = append(discurso)
+			dips.append(nombre)
+			self.intervenciones.append([nombre, discurso])
+		
+		dips_unicos = list(set(dips))
+		
+		for dip in dips_unicos:
+			temp_dip = []
+			for entrada in self.intervenciones:
+				if dip == entrada[0]:
+					temp_dip.append(entrada[1])
+			
+			self.intervenciones_por_diputado[dip] = temp_dip
+			
+		
 		
 	def getActaVotacion(self):
 		"""
 		Toma la url de un acta de votacion y guarda el archivo en un 
 		directorio temporal para el posterior procesamineto
 		"""
-		
+		return None
 
 	def getVotacionesSesion(self, anio, reunion):
-		"""
-		(int, int) -> lista_votaciones
-		periodo, reunion -> lista_votaciones
-		
+		"""	
 		Devuelve una lista de objetos votaciones dados un periodo y una reunion
 		Lista las url de las votaciones de la pagina que coinciden con el periodo y reunion dadas
 		
@@ -147,9 +165,7 @@ class sesion():
 		
 	
 	def getVotacion(self, url):
-		"""
-		(reunion, periodo, expediente) -> objeto votacion
-		
+		"""		
 		Devuelve un objeto que contiene una matriz de diputado, partido 
 		al que pertenece y votacion que realizo y tambien una identificacion
 		en referencia a lo que se voto
@@ -213,7 +229,13 @@ if __name__ == '__main__':
 	ss.getDialogo()
 	ss.getIntervencionesDiputados()
 	
-	for i in ss.intervenciones.keys():
-		print ss.intervenciones[i]
-		raw_input()
-	
+	##for diputado in ss.getDiputados():
+		##print diputado
+	##for i in ss.intervenciones:
+		##print i[0]
+	print type(ss.intervenciones_por_diputado)
+	raw_input()
+	##for i in ss.intervenciones_por_diputado:
+		##print i
+		##raw_input()
+	print ss.intervenciones_por_diputado
